@@ -1,0 +1,2 @@
+# newsgather
+NewsGather (Сборщик новостей)
