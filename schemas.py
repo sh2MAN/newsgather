@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional, Type, Any
+from typing import List
 
 
 class News(BaseModel):
