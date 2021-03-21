@@ -7,11 +7,12 @@ app = FastAPI()
 
 
 @app.get('/')
-async def root():
+def root():
     return {'message': 'Hello World'}
 
+
 @app.get('/news', response_model=Result)
-async def news(limit: int = Query(None, gt=0, description='Количество новостей')):
+def news(limit: int = Query(None, gt=0, description='Количество новостей')):
     grabber = Lenta()
     news = grabber.news(limit)
     data = []
