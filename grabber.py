@@ -7,7 +7,7 @@ import feedparser
 class Grabber:
     """Получение последних новостей из запрошенного RSS канала"""
 
-    def news(self, limit):
+    def news(self, limit=None):
         """
         Получение новостей из RSS канала
             limit: количество последних новостей
@@ -18,7 +18,7 @@ class Grabber:
         all_feed = fp["items"]
         
         for feed in all_feed:
-            if limit > 0:
+            if limit is not None and limit > 0:
                 piece_news= {}
                 pub_date = dt.strptime(
                     feed['published'], '%a, %d %b %Y %H:%M:%S %z'
@@ -28,8 +28,7 @@ class Grabber:
                 piece_news['desc'] = feed['description']
                 piece_news['pub_date'] = pub_date.strftime('%d.%m.%Y %H:%M')
                 news.append(piece_news)
-                
-            limit -= 1
+                limit -= 1
         return news
     
     def grub(self, link):
@@ -54,7 +53,8 @@ class Lenta(Grabber):
         article = soup.find('div', class_='b-topic__content')
         article_dict['title'] = article.find('h1', class_='b-topic__title').text.replace('\xa0',' ')
 
-        img = article.find('div', class_='b-topic__title-image').find('img', src=True)
+        img = soup.find('div', class_='b-topic__title-image')
+        img = img.find('img', src=True)
         article_dict['image'] = img.get('src') if img is not None else None
 
         contents = article.find('div', itemprop='articleBody')
