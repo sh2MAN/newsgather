@@ -1,5 +1,5 @@
 from core.database import Base
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.types import ARRAY
 
 
@@ -14,3 +14,4 @@ class News(Base):
     title = Column(String, nullable=False)
     image = Column(String)
     content = Column(ARRAY(Text))
+    pub_date = Column(DateTime)

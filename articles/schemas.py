@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Union
 
 from pydantic import BaseModel
@@ -18,3 +19,4 @@ class NewsList(NewsBase):
 
 class NewsCreate(NewsBase):
     link: str
+    pub_date: datetime
