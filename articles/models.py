@@ -8,9 +8,9 @@ class News(Base):
 
     __tablename__ = "news"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
 
-    link = Column(String, unique=True, index=True)
-    title = Column(String)
+    link = Column(String, unique=True, index=True, nullable=False)
+    title = Column(String, nullable=False)
     image = Column(String)
     content = Column(ARRAY(Text))
