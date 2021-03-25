@@ -1,13 +1,24 @@
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-PG_USER = 'newsgather_user'
-PG_PASS = 'l0xxn#ss'
-PG_HOST = 'localhost'
-PG_DB = 'newsgather'
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://{PG_USER}:{PG_PASS}@{PG_HOST}/{PG_DB}"
+dotenv_file = BASE_DIR / '.env'
+
+if dotenv_file.exists():
+    load_dotenv(dotenv_file)
+
+USER = os.environ.get('PG_USER')
+PASS = os.environ.get('PG_PASS')
+HOST = os.environ.get('PG_HOST')
+DATABASE = os.environ.get('PG_DB')
+
+SQLALCHEMY_DATABASE_URL = f"postgresql://{USER}:{PASS}@{HOST}/{DATABASE}"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
