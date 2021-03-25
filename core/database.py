@@ -1,24 +1,15 @@
-import os
-from pathlib import Path
-
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from starlette.config import Config
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+config = Config(env_file="./.env")
 
-dotenv_file = BASE_DIR / '.env'
-
-if dotenv_file.exists():
-    load_dotenv(dotenv_file)
-
-
-DBASE = os.environ.get('POSTGRES_DB')
-USER = os.environ.get('POSTGRES_USER')
-PASS = os.environ.get('POSTGRES_PASSWORD')
-HOST = os.environ.get('DB_HOST')
-PORT = os.environ.get('DB_PORT')
+USER = config('POSTGRES_USER')
+PASS = config('POSTGRES_PASSWORD')
+HOST = config('DB_HOST')
+PORT = config('DB_PORT')
+DBASE = config('POSTGRES_DB')
 
 SQLALCHEMY_DATABASE_URL = f"postgresql://{USER}:{PASS}@{HOST}:{PORT}/{DBASE}"
 
