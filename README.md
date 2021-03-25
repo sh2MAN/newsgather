@@ -60,6 +60,4 @@ POSTGRES_HOST_AUTH_METHOD=trust
 
 * **Sergei Simonov** - [sh2MAN](https://github.com/sh2MAN)
 
-## License [![BSDv3 license](https://img.shields.io/badge/License-BSDv3-blue.svg)](LICENSE.md)
-
-This project is licensed under the BSD 3 - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT - see the [LICENSE.md](LICENSE.md) file for details
