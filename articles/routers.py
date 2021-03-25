@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from .crud import create_news, get_all_news, get_news_by_link
 from .schemas import NewsCreate, NewsList
+from core.utils import logger
 
 router = APIRouter()
 
@@ -17,14 +18,19 @@ def news_list(
     limit: int = Query(None, gt=0, description='Количество новостей')
 ):
     grabber = Grabber()
-    data = grabber.lenta.news(limit)
+    data = grabber.news(limit)
 
     for event in data:
         news = get_news_by_link(db, event.get('link'))
         if news is None:
-            news = grabber.lenta.grub(event.get('link'))
-            news = NewsCreate(**news, pub_date=event.get('published'))
-            create_news(db, news)
+            try:
+                news = grabber.grub(event.get('link'))
+                news = NewsCreate(**news, pub_date=event.get('published'))
+                create_news(db, news)
+            except Exception as e:
+                logger.info(
+                    f'Не возможно обработать новость: {event}. Error {e}'
+                )
 
     return get_all_news(db, limit)
 

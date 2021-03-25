@@ -1,8 +1,12 @@
+import re
 from datetime import datetime as dt
+from typing import List, Union
 
 import feedparser
 import requests
 from bs4 import BeautifulSoup
+
+from core.utils import logger
 
 
 class Grabber:
@@ -10,20 +14,22 @@ class Grabber:
     rss_channels = {}
 
     def __init__(self, link: str = None):
+        self._link = link
         if link is not None:
-            self.rss_channels[type(self).__name__.lower()] = link
+            name = self.__get_channel_name(link).lower()
+            self.rss_channels[name] = link
 
     @classmethod
     def register(cls, collector: 'Grabber'):
-        """Регистрируем сборщика как атрибут класса"""
-        name_collector = type(collector).__name__.lower()
+        """Регистрация новостного источника"""
+        name_collector = collector.__get_channel_name(collector._link).lower()
         if name_collector not in cls.__dict__:
             setattr(cls, name_collector, collector)
 
-    def news(self, limit=None):
+    def news(self, limit=None) -> List[dict]:
         """
         Получение новостей из RSS канала
-            limit: количество последних новостей
+            limit: количество последних новостей из канала
         """
         news = []
         if type(self).__name__.lower() == 'grabber':
@@ -34,10 +40,25 @@ class Grabber:
             news += self.__get_news(url, limit)
         return news
 
-    def __get_news(self, url, limit):
+    @staticmethod
+    def __get_channel_name(link) -> str:
+        pattern = r'https?:\/\/(?:[-\w]+\.)?([-\w]+)\.\w+(?:\.\w+)?\/?.*'
+        match = re.search(pattern, link)
+        return match.groups()[0]
+
+    @logger.catch
+    def __get_news(self, url, limit) -> Union[List[dict], list]:
         news = []
-        fp = feedparser.parse(url)
+        try:
+            fp = feedparser.parse(url)
+        except Exception:
+            logger.info(f'Temporary failure in name resolution {url}')
+            return []
+
         all_feed = fp["items"]
+
+        if limit is None:
+            limit = len(all_feed)
 
         for feed in all_feed:
             if limit is not None and limit > 0:
@@ -54,17 +75,37 @@ class Grabber:
                 limit -= 1
         return news
 
-    def grub(self, link):
+    @logger.catch
+    def get_news_page(self, link) -> Union[requests.Request, None]:
+        try:
+            r = requests.get(link)
+            return r
+        except requests.exceptions.RequestException:
+            logger.info(f'Connection error by {link}.')
+            return
+
+    @logger.catch
+    def grub(self, link) -> Union[dict, None]:
         """Получаем данные статьи по ссылке"""
-        raise NotImplementedError
+        channel_name = self.__get_channel_name(link).lower()
+        try:
+            reader = getattr(self, channel_name)
+            return reader.grub(link)
+        except AttributeError:
+            logger.error(f'Not found grabber for link: {link}')
+            return
 
 
 class Lenta(Grabber):
     def grub(self, link) -> dict:
         article_dict = {}
         article_dict['link'] = link
-        r = requests.get(link).text
-        soup = BeautifulSoup(r, 'html.parser')
+        page = self.get_news_page(link)
+
+        if page is None:
+            return {}
+
+        soup = BeautifulSoup(page.text, 'html.parser')
         article = soup.find('div', class_='b-topic__content')
         article_dict['title'] = article.find(
             'h1', class_='b-topic__title'
@@ -84,15 +125,91 @@ class Lenta(Grabber):
 
 
 class Interfax(Grabber):
-    pass
+    def grub(self, link) -> dict:
+        article_dict = {}
+        article_dict['link'] = link
+
+        page = self.get_news_page(link)
+
+        if page is None:
+            return {}
+
+        page = page.text.encode(page.encoding).decode('windows-1251')
+
+        soup = BeautifulSoup(page, 'html.parser')
+        article = soup.find('article', itemprop='articleBody')
+
+        article_dict['title'] = article.find(
+            'h1', itemprop='headline'
+        ).text.replace('\xa0', ' ')
+
+        img = soup.find('figure', class_='inner')
+        if img:
+            img = img.find('img', src=True)
+        article_dict['image'] = img.get('src') if img is not None else None
+
+        for content in article.find_all('p'):
+            article_dict['content'] = article_dict.get(
+                'content', []) + [content.text]
+
+        return article_dict
 
 
 class Kommersant(Grabber):
-    pass
+    def grub(self, link) -> dict:
+        article_dict = {}
+        article_dict['link'] = link
+
+        page = self.get_news_page(link)
+
+        if page is None:
+            return {}
+
+        soup = BeautifulSoup(page.text, 'html.parser')
+        article = soup.find('article', class_='b-article')
+        article_dict['title'] = article.find(
+            'h1', itemprop='headline'
+        ).text.replace('\xa0', ' ')
+
+        img = soup.find('div', class_='b-topic__title-image')
+        if img:
+            img = img.find('img', src=True)
+        article_dict['image'] = img.get('src') if img is not None else None
+
+        contents = article.find('div', itemprop='articleBody')
+        for content in contents.find_all('p'):
+            article_dict['content'] = article_dict.get(
+                'content', []) + [content.text]
+
+        return article_dict
 
 
 class M24(Grabber):
-    pass
+    def grub(self, link) -> dict:
+        article_dict = {}
+        article_dict['link'] = link
+        page = self.get_news_page(link)
+
+        if page is None:
+            return {}
+
+        soup = BeautifulSoup(page.text, 'html.parser')
+        article = soup.find('div', class_='b-material_news')
+        article_dict['title'] = article.find(
+            'h1'
+        ).text.replace('\xa0', ' ')
+
+        img = soup.find('div', class_='b-material-incut-m-image')
+        if img:
+            img = img.find('img', src=True)
+        article_dict['image'] = img.get('src') if img is not None else None
+
+        contents = article.find('div', class_='b-material-body')
+        for content in contents.find_all('p'):
+            article_dict['content'] = article_dict.get(
+                'content', []) + [content.text]
+
+        return article_dict
 
 
 Grabber.register(Lenta('http://lenta.ru/rss'))
@@ -103,9 +220,10 @@ Grabber.register(M24('http://www.m24.ru/rss.xml'))
 
 if __name__ == '__main__':
     grabber = Grabber()
-    print(grabber.news(limit=1))
+    print(grabber.rss_channels)
 
-    news = grabber.lenta.news(limit=2)
+    news = grabber.news(limit=2)
+    print(news)
 
-    data = [grabber.lenta.grub(news[i]['link']) for i in range(len(news))]
+    data = [grabber.grub(news[i]['link']) for i in range(len(news))]
     print(data)
