@@ -69,8 +69,7 @@ class Grabber:
                 piece_news['title'] = feed['title']
                 piece_news['link'] = feed['link']
                 piece_news['desc'] = feed['description']
-                # .strftime('%d.%m.%Y %H:%M')
-                piece_news['published'] = pub_date
+                piece_news['published'] = pub_date.strftime('%d.%m.%Y %H:%M')
                 news.append(piece_news)
                 limit -= 1
         return news
@@ -222,7 +221,7 @@ if __name__ == '__main__':
     grabber = Grabber()
     print(grabber.rss_channels)
 
-    news = grabber.news(limit=2)
+    news = grabber.news(limit=1)
     print(news)
 
     data = [grabber.grub(news[i]['link']) for i in range(len(news))]

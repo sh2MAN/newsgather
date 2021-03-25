@@ -1,13 +1,14 @@
+from datetime import datetime as dt
 from typing import List
 
 from core import utils
+from core.utils import logger
 from fastapi import APIRouter, Depends, Query
 from grabber import Grabber
 from sqlalchemy.orm import Session
 
 from .crud import create_news, get_all_news, get_news_by_link
 from .schemas import NewsCreate, NewsList
-from core.utils import logger
 
 router = APIRouter()
 
@@ -25,7 +26,10 @@ def news_list(
         if news is None:
             try:
                 news = grabber.grub(event.get('link'))
-                news = NewsCreate(**news, pub_date=event.get('published'))
+                pub_date = dt.strptime(
+                    event.get('published'), '%d.%m.%Y %H:%M'
+                )
+                news = NewsCreate(**news, pub_date=pub_date)
                 create_news(db, news)
             except Exception as e:
                 logger.info(
