@@ -13,12 +13,14 @@ dotenv_file = BASE_DIR / '.env'
 if dotenv_file.exists():
     load_dotenv(dotenv_file)
 
-USER = os.environ.get('PG_USER')
-PASS = os.environ.get('PG_PASS')
-HOST = os.environ.get('PG_HOST')
-DATABASE = os.environ.get('PG_DB')
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://{USER}:{PASS}@{HOST}/{DATABASE}"
+DBASE = os.environ.get('POSTGRES_DB')
+USER = os.environ.get('POSTGRES_USER')
+PASS = os.environ.get('POSTGRES_PASSWORD')
+HOST = os.environ.get('DB_HOST')
+PORT = os.environ.get('DB_PORT')
+
+SQLALCHEMY_DATABASE_URL = f"postgresql://{USER}:{PASS}@{HOST}:{PORT}/{DBASE}"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
