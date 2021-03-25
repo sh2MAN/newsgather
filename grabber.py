@@ -82,7 +82,7 @@ class Grabber:
             return r
         except requests.exceptions.RequestException:
             logger.info(f'Connection error by {link}.')
-            return
+            return None
 
     @logger.catch
     def grub(self, link) -> Union[dict, None]:
@@ -93,7 +93,7 @@ class Grabber:
             return reader.grub(link)
         except AttributeError:
             logger.error(f'Not found grabber for link: {link}')
-            return
+            return None
 
 
 class Lenta(Grabber):
